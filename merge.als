@@ -19,6 +19,7 @@ pred merge[disj k1, k2, k3 : Kind, disj s1, s2 : State]{
 			r3.items = r1.items + r2.items
 	}
 	
+	//only if k2.structure = none
 	#k1.records > 0 and #k2.records = 0 implies {
 		all r3 : Record |
 		r3 in k3.records implies one r1 : Record |
@@ -26,6 +27,7 @@ pred merge[disj k1, k2, k3 : Kind, disj s1, s2 : State]{
 			r3.items = r1.items 
 	}
 
+	//only if k1.structure = none
 	#k1.records = 0 and #k2.records > 0 implies {
 		all r3 : Record |
 		r3 in k3.records implies one r1 : Record |
@@ -33,7 +35,6 @@ pred merge[disj k1, k2, k3 : Kind, disj s1, s2 : State]{
 			r3.items = r1.items 
 	}
 }
-//run merge
 
 pred merge_with_no_record[disj k1, k2, k3 : Kind, disj s1, s2 : State]{
 	#k1.records = 0 and #k2.records = 0 and merge[k1, k2, k3, s1, s2]
