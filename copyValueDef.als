@@ -8,7 +8,7 @@ pred copyValueDef[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
 	vd in k1.structure and vd not in k2.structure
 
 	k3.structure = k2.structure + vd
-//	k3.records = k2.records
+
 	all r3 : Record |
 		r3 in k3.records implies one r2 : Record | 
 			r2 in k2.records and r3.items = r2.items + { vc : ValueContainer | vc.def = vd } //this should not exist in a model (as part of k1.records.items)
