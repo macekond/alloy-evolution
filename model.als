@@ -64,3 +64,8 @@ fact different_definitions_in_record{
 	all r : Record, disj vc1, vc2 : ValueContainer |
 		vc1 in r.items and vc2 in r.items implies vc1.def != vc2.def
 }
+
+fact if_records_all_defs_in_kind_structure{
+	all k : Kind |
+		 #k.records > 0 implies k.structure = k.records.items.def
+}
