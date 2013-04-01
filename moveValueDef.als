@@ -32,26 +32,21 @@ pred moveValueDef[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
 }
 
 pred moveValueDef_no_record[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	#k1.records = 0 and #k2.records = 0 and moveValueDef[vd, k1, k2, k3, s1, s2]
+	#k1.records = 0 and #k2.records = 0  and (k1.structure & k2.structure) = none and moveValueDef[vd, k1, k2, k3, s1, s2]
 }
 run moveValueDef_no_record for 3 but exactly 2 State, 3 Kind
 
 pred moveValueDef_one_record_in_both[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	#k1.records = 1 and #k2.records = 1 and moveValueDef[vd, k1, k2, k3, s1, s2]
+	#k1.records = 1 and #k2.records = 1 and (k1.structure & k2.structure) = none and moveValueDef[vd, k1, k2, k3, s1, s2]
 }
 run moveValueDef_one_record_in_both for 3 but exactly 2 State, 3 Kind
 
 pred moveValueDef_one_record_in_target_only[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	#k1.records = 0 and #k2.records = 1 and moveValueDef[vd, k1, k2, k3, s1, s2]
+	#k1.records = 0 and #k2.records = 1  and (k1.structure & k2.structure) = none and moveValueDef[vd, k1, k2, k3, s1, s2]
 }
 run moveValueDef_one_record_in_target_only for 3 but exactly 2 State, 3 Kind
 
 pred moveValueDef_one_record_in_source_only[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	#k1.records = 1 and #k2.records = 0 and moveValueDef[vd, k1, k2, k3, s1, s2]
+	#k1.records = 1 and #k2.records = 0  and (k1.structure & k2.structure) = none and moveValueDef[vd, k1, k2, k3, s1, s2]
 }
 run moveValueDef_one_record_in_source_only for 3 but exactly 2 State, 3 Kind
-
-pred moveValueDef_one_record_in_both_and_different_structure[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	#k1.records = 1 and #k2.records = 1 and (k1.structure & k2.structure) = none and moveValueDef[vd, k1, k2, k3, s1, s2]
-}
-run moveValueDef_one_record_in_both_and_different_structure for 3 but exactly 2 State, 3 Kind
