@@ -5,7 +5,7 @@ pred merge[disj k1, k2, k3 : Kind, disj s1, s2 : State]{
 	k2 in s1.kinds and k2 not in s2.kinds
 	k3 not in s1.kinds and k3 in s2.kinds
 
-	k1.structure + k2.structure - (k2.structure - k1.structure) - (k1.structure - k2.structure) = none
+	k1.structure & k2.structure = none
 	
 	k3.structure = k1.structure + k2.structure
 	
