@@ -1,52 +1,75 @@
 open model
 
-pred moveValueDef[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	k1 in s1.kinds and k1 in s2.kinds
-	k2 in s1.kinds and k2 not in s2.kinds
-	k3 in s2.kinds and k3 not in s1.kinds	
+pred moveValueDef[vd : ValueDef, disj k1, k2, k3, k4 : Kind, disj s1, s2 : State]{
+	//k1 -> k3
+	//k2 -> k4
+	k3 not in s1.kinds
+	k4 not in s1.kinds
+	s2.kinds = (s1.kinds - k1 - k2) + k3 + k4
 
-	vd in k1.structure and vd not in k2.structure
+	k1.name = k3.name
+	k2.name = k4.name
 
-	k3.structure = k2.structure + vd
+	vd in k1.structure.elems and vd not in k2.structure.elems
+	vd not in k3.structure.elems and vd in k4.structure.elems
 
-	#k1.records = #k2.records implies {
-	all r1 : Record |
-		r1 in k1.records implies one r2 : Record | r2 in k2.records and r1.id = r2.id
-
-	all r3 : Record |
-		r3 in k3.records implies one r1, r2 : Record | r1 in k1.records and r2 in k2.records and 
-			r1.id = r2.id and  r2.id = r3.id and 
-			r3.items = r2.items + {vc : ValueContainer | vc in r1.items and vc.def = vd }
+	k4.structure = k2.structure.add[vd]
+	
+	//k1 -> k3 structure
+	let idx = k1.structure.idxOf[vd] {
+		idx = 0 implies k3.structure = rest[k1.structure] else
+			idx = k1.structure.lastIdx implies k3.structure = k1.structure.subseq[0, idx-1] else
+				k3.structure =  k1.structure.subseq[0, idx-1].append[ k1.structure.subseq[idx+1,  k1.structure.lastIdx]]
 	}
+	
+	#k1.records = #k3.records
+	#k2.records = #k4.records
+
+	//k1->k3 records
+	all r3 : Record |
+		r3 in k3.records implies one r1 : Record { 
+			r1 in k1.records and r1.id = r3.id and
+				let idx = k1.structure.idxOf[vd], last =  k1.structure.lastIdx  {
+						idx = 0 implies r3.items = rest[r1.items] else
+							idx = last implies r3.items = r1.items.subseq[0, idx-1] else
+								r3.items = r1.items.subseq[0, idx-1].append[r1.items.subseq[idx+1,  last]]
+				}
+		}
+		
+
+	#k1.records = #k2.records or (#k1.records = 0 and #k2.records > 0) 
+	
+	#k1.records = #k2.records implies {
+		all r4 : Record |
+			r4 in k4.records implies one r1, r2 : Record {
+				r1 in k1.records and r2 in k2. records and r1.id = r2.id and r1.id = r4.id and
+					let idx = k1.structure.idxOf[vd] | r4.items = r2.items.append[r1.items.subseq[idx, idx]]
+			}	
+	}				
 
 	#k1.records = 0 and #k2.records > 0 implies {
-		all r3 : Record |
-		r3 in k3.records implies one r2 : Record |r2 in k2.records and  r2.id = r3.id and 
-			r3.items = r2.items + {vc : ValueContainer | vc.def = vd }
+		all r4 : Record |
+			r4 in k4.records implies one r2 : Record {
+				r2 in k2. records and r2.id = r4.id and r4.items.subseq[0, add[#r2.items,-1]] = r2.items
+				and add[#r2.items, 1] = #r4.items
+			}	
 	}
-
-	#k1.records > 0 and #k2.records = 0 implies {
-		all r3 : Record |
-		r3 in k3.records implies r3.items = {vc : ValueContainer | vc.def = vd }
-	}
+	//reference update not neccesary
 }
 
-pred moveValueDef_no_record[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	#k1.records = 0 and #k2.records = 0  and (k1.structure & k2.structure) = none and moveValueDef[vd, k1, k2, k3, s1, s2]
-}
-run moveValueDef_no_record for 3 but exactly 2 State, 3 Kind
+//run moveValueDef for 3 but exactly 2 State, 4 Kind, 0 Record
 
-pred moveValueDef_one_record_in_both[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	#k1.records = 1 and #k2.records = 1 and (k1.structure & k2.structure) = none and moveValueDef[vd, k1, k2, k3, s1, s2]
+pred moveValueDef_no_record[vd : ValueDef, disj k1, k2, k3, k4 : Kind, disj s1, s2 : State]{
+	#k1.records = 0 and #k2.records = 0  and (k1.structure.elems & k2.structure.elems) = none and moveValueDef[vd, k1, k2, k3, k4, s1, s2]
 }
-run moveValueDef_one_record_in_both for 3 but exactly 2 State, 3 Kind
+run moveValueDef_no_record for 3 but exactly 2 State, 4 Kind
 
-pred moveValueDef_one_record_in_target_only[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	#k1.records = 0 and #k2.records = 1  and (k1.structure & k2.structure) = none and moveValueDef[vd, k1, k2, k3, s1, s2]
+pred moveValueDef_one_record_in_both[vd : ValueDef, disj k1, k2, k3, k4  : Kind, disj s1, s2 : State]{
+	#k1.records = 1 and #k2.records = 1 and (k1.structure.elems & k2.structure.elems)  = none and moveValueDef[vd, k1, k2, k3, k4, s1, s2]
 }
-run moveValueDef_one_record_in_target_only for 3 but exactly 2 State, 3 Kind
+run moveValueDef_one_record_in_both for 4 but exactly 2 State, 4 Kind
 
-pred moveValueDef_one_record_in_source_only[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	#k1.records = 1 and #k2.records = 0  and (k1.structure & k2.structure) = none and moveValueDef[vd, k1, k2, k3, s1, s2]
+pred moveValueDef_one_record_in_target_only[vd : ValueDef, disj k1, k2, k3, k4  : Kind, disj s1, s2 : State]{
+	#k1.records = 0 and #k2.records = 1 and (k1.structure.elems & k2.structure.elems)  = none and moveValueDef[vd, k1, k2, k3, k4, s1, s2]
 }
-run moveValueDef_one_record_in_source_only for 3 but exactly 2 State, 3 Kind
+run moveValueDef_one_record_in_target_only for 4 but exactly 2 State, 4 Kind

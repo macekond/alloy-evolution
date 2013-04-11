@@ -1,19 +1,25 @@
 open model
 
 pred copyValueDef[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	k1 in s1.kinds and k1 in s2.kinds
-	k2 in s2.kinds and k2 not in s1.kinds
-	k3 in s2.kinds and k3 not in s1.kinds	
+	// k1 source of def
+	// k2 target of copy
+	// k3 result of copy
+	
+	s2.kinds = s1.kinds - k2 + k3
 
-	vd in k1.structure and vd not in k2.structure
+	vd in k1.structure.elems and vd not in k2.structure.elems
 
-	k3.structure = k2.structure + vd
+	k2.name = k3.name
+	k3.structure = k2.structure.add[vd]
 
+	#k3.records = #k2.records
 	all r3 : Record |
 		r3 in k3.records implies one r2 : Record | 
-			r2 in k2.records and r3.items = r2.items + { vc : ValueContainer | vc.def = vd } //this should not exist in a model (as part of k1.records.items)
+			r2.id = r3.id and r2 in k2.records and #r3.items = add[1, #r2.items] 
+			and r3.items.subseq[0, add[r3.items.lastIdx,-1]] = r2.items
+
+	//references are ok - the name and ids preserve
 }
-run copyValueDef
 
 pred copyValueDef_no_record[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
 	#k1.records = 0 and #k2.records = 0 and copyValueDef[vd, k1, k2, k3, s1, s2]
