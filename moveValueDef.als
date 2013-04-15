@@ -5,6 +5,8 @@ pred moveValueDef[vd : ValueDef, disj k1, k2, k3, k4 : Kind, disj s1, s2 : State
 	//k2 -> k4
 	k3 not in s1.kinds
 	k4 not in s1.kinds
+	k1 in s1.kinds
+	k2 in s1.kinds
 	s2.kinds = (s1.kinds - k1 - k2) + k3 + k4
 
 	k1.name = k3.name
@@ -73,3 +75,50 @@ pred moveValueDef_one_record_in_target_only[vd : ValueDef, disj k1, k2, k3, k4  
 	#k1.records = 0 and #k2.records = 1 and (k1.structure.elems & k2.structure.elems)  = none and moveValueDef[vd, k1, k2, k3, k4, s1, s2]
 }
 run moveValueDef_one_record_in_target_only for 4 but exactly 2 State, 4 Kind
+
+
+/* ***************************************************************************************** */
+
+assert moveValueDef_structure_same{
+	all vd : ValueDef, disj k1, k2, k3, k4 : Kind, disj s1, s2 : State |
+		moveValueDef[vd, k1, k2, k3, k4, s1, s2] implies 
+			#s1.kinds.structure.elems = #s2.kinds.structure.elems		
+}
+check moveValueDef_structure_same for 5
+
+assert moveValueDef_number_of_valueDefs_same{
+	all vd : ValueDef, disj k1, k2, k3, k4 : Kind, disj s1, s2 : State |
+		moveValueDef[vd, k1, k2, k3, k4, s1, s2] implies 
+ 			#({vc : ValueDef | vc in s1.kinds.structure.elems}) = #({vc : ValueDef | vc in s2.kinds.structure.elems})
+}
+check moveValueDef_number_of_valueDefs_same  for 5
+
+assert moveValueDef_number_of_referenceDefs_same_after{
+	all vd : ValueDef, disj k1, k2, k3, k4 : Kind, disj s1, s2 : State |
+		moveValueDef[vd, k1, k2, k3, k4, s1, s2] implies 
+			#({rd : ReferenceDef | rd in s1.kinds.structure.elems}) = #({vc : ReferenceDef | vc in s2.kinds.structure.elems})
+}
+check moveValueDef_number_of_referenceDefs_same_after for 5
+
+
+assert moveValueDef_number_of_kinds_is_same{
+	all vd : ValueDef, disj k1, k2, k3, k4 : Kind, disj s1, s2 : State |
+		moveValueDef[vd, k1, k2, k3, k4, s1, s2] implies 
+			#({k : Kind | k in s1.kinds}) = #({k : Kind | k in s2.kinds})
+}
+check moveValueDef_number_of_kinds_is_same for 5
+
+assert moveValueDef_can_increase_number_of_values{ //because they are NOTNULL
+	all vd : ValueDef, disj k1, k2, k3, k4 : Kind, disj s1, s2 : State |
+		moveValueDef[vd, k1, k2, k3, k4, s1, s2] implies 
+			#({k : ValueContainer | k in s1.kinds.records.items.elems}) <= #({k : ValueContainer | k in s2.kinds.records.items.elems})
+}
+check moveValueDef_can_increase_number_of_values for 5 
+
+assert moveValueDef_not_change_number_of_references{
+	all vd : ValueDef, disj k1, k2, k3, k4 : Kind, disj s1, s2 : State |
+		moveValueDef[vd, k1, k2, k3, k4, s1, s2] implies 
+			#({k : ReferenceContainer | k in s1.kinds.records.items.elems}) = #({k : ReferenceContainer | k in s2.kinds.records.items.elems})
+}
+check moveValueDef_not_change_number_of_references for 5
+

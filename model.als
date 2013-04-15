@@ -30,6 +30,8 @@ sig Record{
 	
 	//number of items is equal to number of definitions defying the structure of the owning kind
 	#items = #(this.~records.structure)
+
+	
 }
 
 abstract sig Container{
@@ -37,6 +39,11 @@ abstract sig Container{
 }{
 	some r : Record |
 		this in r.items.elems
+	
+	all disj k1, k2 : Kind |
+		this in k1.records.items.elems and this in k2.records.items.elems implies k1.~kinds & k2.~kinds = none
+
+
 }
 
 sig ValueContainer extends Container{
@@ -66,7 +73,9 @@ sig Name{}{
 		this in k1.name and this in k2.name implies k1.~kinds != k2.~kinds
 }
 
-abstract sig Def{}{
+abstract sig Def{
+
+}{
 	some k : Kind |
 		this in k.structure.elems
 }
@@ -79,14 +88,22 @@ sig ValueDef extends Def{
 sig ReferenceDef extends Def{
 	reference : one Name
 }{
-	//reference is in the same state
-	//reference.~kinds = this.~structure.~kinds
+
 }
 
 /* ************************************************************************************************** */
 fact not_same_ids_in_kinds{
 	all disj r1, r2 : Record |
 		r1.id = r2.id implies r1.(~records) != r2.(~records)
+
+	//no duplicate ids
+	all k : Kind, disj r1, r2 : Record |
+		r1 in k.records and r2 in k.records implies r1.id != r2.id
+}
+
+fact no_same_defs_in_kinds_of_a_state{
+	all disj k1, k2 : Kind, d : Def |
+		d in k1.structure.elems and d in k2.structure.elems implies k1.~kinds != k2.~kinds
 }
 
 fact structure_of_record_in_kind{

@@ -184,6 +184,6 @@ run split_with_one_record for 3 but exactly 2 State, 3 Kind
 pred split_with_no_record[disj k1, k2, k3 : Kind, disj s1, s2 : State, vd : ValueDef ]{
 	#k1.records = 0 and splitStructure[vd, k1, k2, k3, s1, s2]
 }
-run split_with_no_record for 2 but exactly 2 State, 3 Kind
+run split_with_no_record for 3 but exactly 2 State, 3 Kind
 
 
