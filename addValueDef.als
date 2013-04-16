@@ -14,7 +14,7 @@ pred addValueDef[vd : ValueDef, disj k1, k2 : Kind, disj s1, s2 :  State]{
 	all r2 : Record |
 		r2 in k2.records implies 
 			one r1 : Record | r1 in k1.records and r1.id = r2.id and 
-				all c : Container | r1.items.idxOf[c] = r2.items.idxOf[c]
+				all c : Container | c in r1.items.elems implies r1.items.idxOf[c] = r2.items.idxOf[c]
 }
 
 pred addValue_with_no_record[vd : ValueDef, disj k1, k2 : Kind, disj s1, s2 :  State]{
@@ -38,7 +38,7 @@ run addValue_with_no_record_but_reference_on_self for 3 but exactly 2 State, 2 K
 pred addValue_with_one_record[vd : ValueDef, disj k1, k2 : Kind, disj s1, s2 :  State]{
 	#k1.records = 1 and addValueDef[vd, k1, k2, s1, s2]
 }
-run addValue_with_one_record for 2 but exactly 2 State, 2 Kind, 0 ReferenceDef
+run addValue_with_one_record for 6 but exactly 2 State, 2 Kind, 0 ReferenceDef
 
 pred addValue_with_one_record_and_reference_on_self[rd: ReferenceDef, vd : ValueDef, disj k1, k2 : Kind, disj s1, s2 :  State]{
 	#k1.records = 1

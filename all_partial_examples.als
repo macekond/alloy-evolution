@@ -10,6 +10,7 @@ open split
 open addKind
 open remKind
 
+//1
 pred addReference_with_no_record[rd : ReferenceDef, disj k1, k2 : Kind, disj s1, s2 :  State]{
 	k1.records = none and addReferenceDef[rd, k1, k2, s1, s2]
 }
@@ -30,6 +31,7 @@ pred addReference_on_other_with_some_record[rd : ReferenceDef, disj k1, k2, k3 :
 }
 run addReference_on_other_with_some_record for 4 but exactly 2 State, 3 Kind
 
+//5
 pred addValue_with_no_record[vd : ValueDef, disj k1, k2 : Kind, disj s1, s2 :  State]{
 	k1.records = none and addValueDef[vd, k1, k2, s1, s2]
 }
@@ -52,7 +54,7 @@ run addValue_with_no_record_but_reference_on_self for 3 but exactly 2 State, 2 K
 pred addValue_with_one_record[vd : ValueDef, disj k1, k2 : Kind, disj s1, s2 :  State]{
 	#k1.records = 1 and addValueDef[vd, k1, k2, s1, s2]
 }
-run addValue_with_one_record for 2 but exactly 2 State, 2 Kind, 0 ReferenceDef
+run addValue_with_one_record for 5 but exactly 2 State, 2 Kind, 0 ReferenceDef
 
 pred addValue_with_one_record_and_reference_on_self[rd: ReferenceDef, vd : ValueDef, disj k1, k2 : Kind, disj s1, s2 :  State]{
 	#k1.records = 1
@@ -60,8 +62,9 @@ pred addValue_with_one_record_and_reference_on_self[rd: ReferenceDef, vd : Value
 	and rd  in k1.structure.elems
 	and addValueDef[vd, k1, k2, s1, s2]
 }
-run addValue_with_one_record_and_reference_on_self for 4 but exactly 2 State, 2 Kind
+run addValue_with_one_record_and_reference_on_self for 5 but exactly 2 State, 2 Kind
 
+//10
 pred addValue_with_one_record_and_reference_on_self_from_other[rd: ReferenceDef, vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 :  State]{
 	#k1.records = 1
 	and rd.reference = k1.name
@@ -70,7 +73,6 @@ pred addValue_with_one_record_and_reference_on_self_from_other[rd: ReferenceDef,
 	and addValueDef[vd, k1, k2, s1, s2]
 }
 run addValue_with_one_record_and_reference_on_self_from_other for 4 but exactly 2 State
-
 
 
 pred copyValueDef_no_record[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
@@ -86,7 +88,7 @@ run copyValueDef_no_record_in_target for 3 but exactly 2 State, 3 Kind
 pred copyValueDef_one_record_in_target[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
 	#k2.records = 1 and copyValueDef[vd, k1, k2, k3, s1, s2]
 }
-run copyValueDef_one_record_in_target for 3 but exactly 2 State, 3 Kind
+run copyValueDef_one_record_in_target for 6 but exactly 2 State, 3 Kind
 
 
 
@@ -95,6 +97,7 @@ pred changeValueDefToKind_no_records[vd : ValueDef, disj k1, k2, k3 : Kind, disj
 }
 run changeValueDefToKind_no_records for 3 but exactly 2 State, 3 Kind
 
+//15
 pred changeValueDefToKind_one_record[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
 	#k1.records = 1 and changeValueDefToKind[vd, k1, k2, k3, s1, s2]
 }
