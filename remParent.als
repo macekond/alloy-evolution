@@ -63,3 +63,25 @@ assert remParent_not_change_number_of_references{
 			#({k : ReferenceContainer | k in s1.kinds.records.items.elems}) = #({k : ReferenceContainer | k in s2.kinds.records.items.elems})
 }
 check remParent_not_change_number_of_references for 5
+
+assert remParent_can_decrease_inheritace_depth{
+	all disj k1, k2, k3 : Kind, disj s1, s2 : State |
+		remParent[k1, k2, k3, s1, s2] implies
+			depth_decreased[s1, s2] or depth_preserved[s1,s2]
+		
+}
+check remParent_can_decrease_inheritace_depth for 5
+
+assert remParent_can_decrease_number_of_children{
+	all disj k1, k2, k3 : Kind, disj s1, s2 : State |
+		remParent[k1, k2, k3, s1, s2] implies 
+			children_preserve[s1,s2] or 	children_decrease[s1,s2]
+}
+check remParent_can_decrease_number_of_children for 5
+
+assert remParent_not_change_cohesion_number{
+	all disj k1, k2, k3 : Kind, disj s1, s2 : State |
+		remParent[k1, k2, k3, s1, s2] implies
+			coupling_preserve[s1, s2]
+}
+check remParent_not_change_cohesion_number for 5

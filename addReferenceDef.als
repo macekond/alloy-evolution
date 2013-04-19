@@ -6,6 +6,7 @@ pred addReferenceDef[rd : ReferenceDef, disj k1, k2 : Kind, disj s1, s2 :  State
 	s2.kinds = s1.kinds - k1 + k2
 
 	k1.name = k2.name
+	k1.parent = k2.parent
 
 	rd not in k1.structure.elems
 
@@ -88,3 +89,26 @@ assert addReferenceDef_increase_or_not_change_number_of_references{
 			#({k : ReferenceContainer | k in s1.kinds.records.items.elems}) <= #({k : ReferenceContainer | k in s2.kinds.records.items.elems})
 }
 check addReferenceDef_increase_or_not_change_number_of_references  for 5
+
+
+assert  addReferenceDef_not_change_inheritace_depth{
+	all rd : ReferenceDef, disj k1, k2 : Kind, disj s1, s2 :  State |
+		addReferenceDef[rd, k1, k2, s1, s2] implies 
+			depth_preserved[s1, s2]
+}
+check addReferenceDef_not_change_inheritace_depth for 5
+
+assert addReferenceDef_not_change_number_of_children{
+	all rd : ReferenceDef, disj k1, k2 : Kind, disj s1, s2 :  State |
+		addReferenceDef[rd, k1, k2, s1, s2] implies
+			children_preserve[s1,s2]
+}
+check addReferenceDef_not_change_number_of_children for 5
+
+assert addReferenceDef_can_increase_cohesion_number{
+	all rd : ReferenceDef, disj k1, k2 : Kind, disj s1, s2 :  State |
+		addReferenceDef[rd, k1, k2, s1, s2] implies
+				coupling_preserve[s1, s2] or coupling_increase[s1, s2]	
+}
+check addReferenceDef_can_increase_cohesion_number for 5
+

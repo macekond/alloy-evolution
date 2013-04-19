@@ -9,6 +9,12 @@ pred merge[disj k1, k2, k3 : Kind, disj s1, s2 : State]{
 	k3 not in s1.kinds
 	
 	k3.name = k1.name
+	k1.parent = none
+	no k' : Kind | k' in s1.kinds and k1.name in k'.*parent
+	k3.parent = none //inline would be different
+	no k' : Kind | k' in s1.kinds and k2.name in k'.*parent
+	k2.parent = none
+	no k' : Kind | k' in s1.kinds and k3.name in k'.*parent
 
 	{no rd : ReferenceDef | rd.reference = k2.name and rd in s1.kinds.structure.elems} implies {
 		k3.structure = k1.structure.append[k2.structure]  
@@ -30,19 +36,8 @@ pred merge[disj k1, k2, k3 : Kind, disj s1, s2 : State]{
 					k1.structure.append[k2.structure].idxOf[v] = k3.structure.idxOf[rd3] and rd3.reference = k3.name 
 					and rd3 not in s1.kinds.structure.elems 
 
-	
-/*
-			all v :  Def | v in k3.structure.elems implies{  
-				one v1 : Def |
-					let mstruct = k1.structure.append[k2.structure] {
-						v1 in mstruct.elems
-						k3.structure.idxOf[v] = mstruct.idxOf[v1]
-						{v1.reference != k2.name implies v = v1 else v.reference = k3.name}
-					}
-			} */
 			all v1 : Def | v1 in k1.structure.elems + k2.structure.elems and v1.reference != k2.name implies v1 in k3.structure.elems
-		//	#{r : ReferenceDef | r in k1.structure.elems + k2.structure.elems and r.reference = k2.name} <=	#{r : ReferenceDef | r in k3.structure.elems and r.reference = k2.name}
-
+	
 			all k : Kind |
 				k in s1.kinds and k !=k1 and k != k2 and k2.name not in k.structure.elems.reference implies
 					k in s2.kinds
@@ -195,3 +190,25 @@ assert merge_not_change_number_of_references{
 }
 check merge_not_change_number_of_references for 5
 
+
+assert merge_not_change_inheritace_depth{
+	all disj k1, k2, k3 : Kind, disj s1, s2 : State |
+		merge[k1, k2, k3, s1, s2]  implies
+		all k : Kind | k in s1.kinds implies 
+				depth_preserved[s1, s2]
+}
+check merge_not_change_inheritace_depth for 5
+
+assert merge_not_change_number_of_children{
+	all disj k1, k2, k3 : Kind, disj s1, s2 : State |
+		merge[k1, k2, k3, s1, s2] implies 
+			depth_preserved[s1,s2]
+}
+check merge_not_change_number_of_children for 5
+
+assert merge_can_increase_cohesion_number{
+	all disj k1, k2, k3 : Kind, disj s1, s2 : State |
+		merge[k1, k2, k3, s1, s2]  implies
+			coupling_preserve[s1, s2] or coupling_increase[s1, s2]
+}
+check merge_can_increase_cohesion_number for 5

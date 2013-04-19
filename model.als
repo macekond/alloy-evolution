@@ -4,6 +4,7 @@ sig State{
 
 sig Kind{
 	parent : lone Name,
+	parK :  lone Kind,
 	name : one Name,
 	records : set Record,
 	structure : seq Def
@@ -11,7 +12,7 @@ sig Kind{
 	some s : State |
 		this in s.kinds
 
-	 !structure.hasDups
+	 !structure.hasDups	
 }
 
 sig Record{
@@ -33,9 +34,6 @@ sig Record{
 	#items = #(this.~records.structure)	
 }
 
-
-
-
 abstract sig Container{
 	//values : set (Value + Int)
 }{
@@ -44,8 +42,6 @@ abstract sig Container{
 	
 	all disj k1, k2 : Kind |
 		this in k1.records.items.elems and this in k2.records.items.elems implies k1.~kinds & k2.~kinds = none
-
-
 }
 
 sig ValueContainer extends Container{
@@ -91,6 +87,7 @@ sig ReferenceDef extends Def{
 }
 
 /* ************************************************************************************************** */
+
 fact not_same_ids_in_kinds{
 	all disj r1, r2 : Record |
 		r1.id = r2.id implies r1.(~records) != r2.(~records)
@@ -150,8 +147,22 @@ fact parent_and_child_in_same_states{
 }
 
 fact no_cyclical_inheritance{
+	no k : Kind | k.parent = k.name
+	all k1, k2 : Kind | k2.parK = k1 implies k2 not in k1.*parK
+}
+
+fact parK_definition{
 	all k1, k2 : Kind |
-		k1.parent = k2.name implies k1.name not in k2.*parent
+		k1.parK = k2 implies some s : State | s in k2.~kinds and s in k1.~kinds //or (k1.~kinds in k2.~kinds)
+
+	all k1 : Kind |
+		k1.parent = none implies k1.parK = none 
+
+	all k1 : Kind |
+		k1.parent !=none implies k1.parK != none
+
+	all k1, k2 : Kind |
+		  k1.parK = k2 implies k1.parent = k2.name
 }
 
 fact ids_in_hierarchy_are_same{
@@ -161,12 +172,78 @@ fact ids_in_hierarchy_are_same{
 				one r2 : Record | r2 in k2.records and r1.id = r2.id
 }
 
+/* ************************************************************************************************** */
+fun children(k: Kind, s : State) : set Kind{
+	{ k1 : Kind | k1.parK = k and k in s.kinds and k1 in s.kinds}
+}
 
+fun coupling(k1, k2 : Kind, s : State) : one Int{
+	k1 in s.kinds and k2 in s.kinds implies
+		#{rd : ReferenceDef | rd in k1.structure.elems and rd.reference = k2.name}
+	else 0
+}
 
+fun parentsInState(k : Kind, s : State) : set Kind{
+	k.{ k1, k2 : Kind | 
+			k1 in s.kinds and k2 in k1.*parK and k2 in s.kinds and k1 != k2}
+}
+/* ************************************************************************************************** */
+//PREDICATES EXAMINING MAX INHERITANCE DEPTH
+pred depth_preserved[s1, s2 : State]{
+	{(not depth_increased[s1, s2]) and (not depth_decreased[s1, s2])}
+}
+
+pred depth_decreased[s1, s2 : State]{
+	#s1.kinds = 0 and #s2.kinds > 0 implies #s1.kinds != 0 else
+		all k2 : Kind | k2 in s2.kinds implies some k1 : Kind | k1 in s1.kinds and #parentsInState[k1, s1] > #parentsInState[k2, s2]
+}
+
+pred depth_increased[s1, s2 : State]{
+		#s1.kinds = 0 and #s2.kinds > 0 implies #s1.kinds != 0 else
+		all k1 : Kind | k1 in s1.kinds implies some k2 : Kind | k2 in s2.kinds and #parentsInState[k1, s1] < #parentsInState[k2, s2]
+}
+
+// PREDICATES EXAMINING MAX NUMBER OF CHILDREN
+pred children_preserve[s1, s2: State]{
+	(not children_increase[s1, s2]) and (not children_decrease[s1, s2])
+}
+
+pred children_increase[s1, s2 : State]{
+	({#s1.kinds = 0 and #s2.kinds > 0} or {#s1.kinds = 0 and #s2.kinds = 0}) implies #s1.kinds != 0 else
+	all k1 : Kind | k1 in s1.kinds implies some k2 : Kind | k2 in s2.kinds and #k1.children[s1] < #k2.children[s2]
+}
+
+pred children_decrease[s1, s2 : State]{
+	((#s1.kinds = 0 and #s2.kinds = 0) or (#s1.kinds = 0 and #s2.kinds > 0)) implies #s1.kinds != 0  else
+	all k2 : Kind | k2 in s2.kinds implies some k1 : Kind | k1 in s1.kinds and #k1.children[s1] > #k2.children[s2]
+}
+
+//PREDICATES EXAMINING COUPLING
+pred coupling_preserve[s1,s2 : State]{
+	(not coupling_increase[s1,s2]) and (not coupling_decrease[s1, s2])
+}
+
+pred coupling_increase[s1,s2 : State]{
+	({#s1.kinds = 0 and #s2.kinds = 0}) implies #s1.kinds != 0 else
+	all k1, k12 : Kind | 
+		(k1 in s1.kinds and k12 in s1.kinds) implies 
+			some k2, k22 : Kind | k2 in s2.kinds and k22 in s2.kinds and coupling[k1, k12, s1] < coupling[k2, k22, s2]
+}
+
+pred coupling_decrease[s1,s2 : State]{
+	({#s1.kinds = 0 and #s2.kinds > 0} or {#s1.kinds = 0 and #s2.kinds = 0}) implies #s1.kinds != 0 else
+	all k2, k22 : Kind | 
+		(k2 in s2.kinds and k22 in s2.kinds) implies 
+			some k1, k12 : Kind | k1 in s1.kinds and k12 in s1.kinds and coupling[k1, k12, s1] > coupling[k2, k22, s2]
+}
 /* ************************************************************************************************** */
 
-run {} for 3 but exactly 1 ReferenceContainer, 1 State, 1 Kind, 2 Record
+run {
+	some k1, k2 : Kind |
+		k1.parent = none and k2.parent = k1.name
+} for 5 but exactly 2 State
+
 run {
 	some k1, k2, k3 : Kind |
 		k1.parent = k2.name and k2.parent = k3.name //and k1 = k3
-} for 4 but exactly 2 State
+} for 5 but exactly 2 State

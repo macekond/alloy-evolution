@@ -12,6 +12,11 @@ pred splitStructure[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
 	k3.structure.elems = vd
 	vd not in k2.structure.elems
 	
+	k1.parent = none
+	k2.parent = none
+	k3.parent = none	
+	{no k : Kind | k in s2.kinds and k.parent = k3.name}
+
 	#k1.records = #k2.records
 	#k1.records = #k3.records
 
@@ -109,5 +114,29 @@ assert split_not_change_number_of_references{
 }
 check split_not_change_number_of_references for 5
 
+assert split_not_change_inheritace_depth{
+	all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
+		splitStructure[vd, k1, k2, k3, s1, s2] implies 
+		 all k : Kind | k in s1.kinds implies 
+				some k' : Kind | k' in s2.kinds  and #(k'.*parK) = #(k.*parK)
+			and
+			all k' : Kind | k' in s2.kinds implies 
+				some k : Kind | k in s1.kinds and  #(k'.*parK) = #(k.*parK)
+}
+check split_not_change_inheritace_depth for 5
+
+assert split_not_change_nmber_of_children{
+	all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
+		splitStructure[vd, k1, k2, k3, s1, s2] implies 
+			children_preserve[s1,s2] 
+}
+check split_not_change_nmber_of_children for 5
+
+assert split_not_change_cohesion_number{
+	all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
+		splitStructure[vd, k1, k2, k3, s1, s2] implies 
+			coupling_preserve[s1, s2]
+}
+check split_not_change_cohesion_number for 5
 
 

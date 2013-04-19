@@ -2,6 +2,8 @@ open model
 
 pred addKind[k : Kind, disj s1, s2 : State]{
 	k not in s1.kinds
+	
+	k.parent = none
 	#k.records = 0
 
 	s2.kinds = s1.kinds + k
@@ -50,3 +52,25 @@ assert addKind_not_change_number_of_references{
 			#({k : ReferenceContainer | k in s1.kinds.records.items.elems}) = #({k : ReferenceContainer | k in s2.kinds.records.items.elems})
 }
 check addKind_not_change_number_of_references for 5
+
+
+assert   addKind_not_change_inheritace_depth{
+	all k : Kind, disj s1, s2 : State |
+		addKind[k, s1, s2] implies 
+			depth_preserved[s1, s2]
+}
+check  addKind_not_change_inheritace_depth for 5
+
+assert addKind_not_change_number_of_children{
+		all k : Kind, disj s1, s2 : State |
+		addKind[k, s1, s2] implies 
+			children_preserve[s1,s2]
+}
+check  addKind_not_change_number_of_children for 5
+
+assert addKind_can_increase_cohesion_number{
+	all k : Kind, disj s1, s2 : State |
+		addKind[k, s1, s2] implies 
+			coupling_preserve[s1, s2] or coupling_increase[s1, s2]
+}
+check  addKind_can_increase_cohesion_number for 5

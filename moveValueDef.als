@@ -12,6 +12,9 @@ pred moveValueDef[vd : ValueDef, disj k1, k2, k3, k4 : Kind, disj s1, s2 : State
 	k1.name = k3.name
 	k2.name = k4.name
 
+	k1.parent = k3.parent
+	k2.parent = k4.parent
+
 	vd in k1.structure.elems and vd not in k2.structure.elems
 	vd not in k3.structure.elems and vd in k4.structure.elems
 
@@ -121,4 +124,28 @@ assert moveValueDef_not_change_number_of_references{
 			#({k : ReferenceContainer | k in s1.kinds.records.items.elems}) = #({k : ReferenceContainer | k in s2.kinds.records.items.elems})
 }
 check moveValueDef_not_change_number_of_references for 5
+
+
+assert moveValueDef_not_change_inheritace_depth{
+	all vd : ValueDef, disj k1, k2, k3, k4 : Kind, disj s1, s2 : State |
+		moveValueDef[vd, k1, k2, k3, k4, s1, s2] implies
+			depth_preserved[s1, s2]
+}
+check moveValueDef_not_change_inheritace_depth for 5
+
+assert moveValueDef_not_change_number_of_children{
+	all vd : ValueDef, disj k1, k2, k3, k4 : Kind, disj s1, s2 : State |
+		moveValueDef[vd, k1, k2, k3, k4, s1, s2] implies 
+			children_preserve[s1,s2]
+}
+check moveValueDef_not_change_number_of_children for 5
+
+assert moveValueDef_not_change_cohesion_number{
+	all vd : ValueDef, disj k1, k2, k3, k4 : Kind, disj s1, s2 : State |
+		moveValueDef[vd, k1, k2, k3, k4, s1, s2] implies
+		coupling_preserve[s1, s2]
+}
+check moveValueDef_not_change_cohesion_number for 5
+
+
 

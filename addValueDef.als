@@ -7,6 +7,8 @@ pred addValueDef[vd : ValueDef, disj k1, k2 : Kind, disj s1, s2 :  State]{
 
 	vd not in k1.structure.elems 
 
+	k1.parent = k2.parent
+
 	k2.structure = k1.structure.add[vd]
 	k2.name = k1.name
 	
@@ -14,7 +16,8 @@ pred addValueDef[vd : ValueDef, disj k1, k2 : Kind, disj s1, s2 :  State]{
 	all r2 : Record |
 		r2 in k2.records implies 
 			one r1 : Record | r1 in k1.records and r1.id = r2.id and 
-				all c : Container | c in r1.items.elems implies r1.items.idxOf[c] = r2.items.idxOf[c]
+				{all c : Container | c in r1.items.elems implies r1.items.idxOf[c] = r2.items.idxOf[c]} and
+				{all c : Container | c in r2.items.elems and r2.items.idxOf[c] != r2.items.lastIdx implies r1.items.idxOf[c] = r2.items.idxOf[c]}
 }
 
 pred addValue_with_no_record[vd : ValueDef, disj k1, k2 : Kind, disj s1, s2 :  State]{
@@ -101,4 +104,27 @@ assert addValueDef_not_change_number_of_references{
 		addValueDef[vd, k1, k2, s1, s2] implies  
 			#({k : ReferenceContainer | k in s1.kinds.records.items.elems}) = #({k : ReferenceContainer | k in s2.kinds.records.items.elems})
 }
-check addValueDef_not_change_number_of_references for 5
+check addValueDef_not_change_number_of_references for 5 
+
+
+assert  addValueDef_not_change_inheritace_depth{
+	all k1, k2 : Kind, disj s1, s2 : State, vd : ValueDef |
+		addValueDef[vd, k1, k2, s1, s2] implies  
+		all k : Kind | k in s1.kinds implies 
+			depth_preserved[s1, s2]
+}
+check addValueDef_not_change_inheritace_depth for 5
+
+assert addValueDef_not_change_number_of_children{
+	all k1, k2 : Kind, disj s1, s2 : State, vd : ValueDef |
+		addValueDef[vd, k1, k2, s1, s2] implies  
+			children_preserve[s1,s2]
+}
+check addValueDef_not_change_number_of_children for 5
+
+assert addValueDef_not_change_cohesion_number{
+	all k1, k2 : Kind, disj s1, s2 : State, vd : ValueDef |
+		addValueDef[vd, k1, k2, s1, s2] implies  
+			coupling_preserve[s1, s2] 
+}
+check addValueDef_not_change_cohesion_number for 5

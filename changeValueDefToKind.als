@@ -7,15 +7,25 @@ pred changeValueDefToKind[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : S
 	//k1 -> k2
 	// k3 new	
 
+	all k : Kind |
+		k in s1.kinds implies parentsInState[k, s1]
+
+	all k : Kind |
+		k in s2.kinds implies parentsInState[k, s2]
+
 	s2.kinds = s1.kinds - k1 + k2 + k3
 	
+	k1.name = k2.name 
+	k2.parent = k1.parent
+	k3.parent = none
+
 	vd in k1.structure.elems
 	
 	add[#k2.structure,1] = #k1.structure
 	let idx = k1.structure.idxOf[vd], last =  k1.structure.lastIdx |
 		 idx = 0 implies k2.structure = rest[k1.structure] else
-			idx = last implies k2.structure = k1.structure.subseq[0, last -1] else
-				k2.structure = k1.structure.subseq[0, idx-1].append[k1.structure.subseq[idx+1, last]]
+			idx = last implies k2.structure = k1.structure.subseq[0, add[last, -1]] else
+				k2.structure = k1.structure.subseq[0, add[idx,-1]].append[k1.structure.subseq[add[idx,1], last]]
 	
 	//k3.structure should have the same structure as vd, but the max cardinality is 1
 	k3.structure.elems = vd
@@ -25,8 +35,8 @@ pred changeValueDefToKind[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : S
 			r2 in k2.records implies one r1 : Record | r1.id = r2.id and r1 in k1.records  
 				and let idx = k1.structure.idxOf[vd], last = k1.structure.lastIdx  {
 						idx = 0 implies r2.items = rest[r1.items] else
-							idx = last implies r2.items = r1.items.subseq[0, idx-1] else
-								r2.items = r1.items.subseq[0, idx-1].append[r1.items.subseq[idx+1,  last]]
+							idx = last implies r2.items = r1.items.subseq[0, add[idx,1]] else
+								r2.items = r1.items.subseq[0, add[idx,-1]].append[r1.items.subseq[add[idx,1],  last]]
 				}
 
 	#k1.records = #k3.records
@@ -38,6 +48,10 @@ pred changeValueDefToKind[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : S
 	
 	//maybe add a reference from k3 -> k1, but they have the same ID
 }
+pred parentsInState[k:Kind, s: State]{
+	all k1 : Kind | k1 in k.*parK implies k in s.kinds and k1 in s.kinds
+}
+
 
 pred changeValueDefToKind_no_records[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
 	#k1.records = 0 and changeValueDefToKind[vd, k1, k2, k3, s1, s2]
@@ -49,6 +63,10 @@ pred changeValueDefToKind_one_record[vd : ValueDef, disj k1, k2, k3 : Kind, disj
 }
 run changeValueDefToKind_one_record for 4 but exactly 2 State, 3 Kind
 
+pred changeValueDefToKind_hierarchy_exists_on_parent[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
+	k1.parent != none and changeValueDefToKind[vd, k1, k2, k3, s1, s2]
+}
+run changeValueDefToKind_hierarchy_exists_on_parent for 4 but exactly 2 State
 
 /* ***************************************************************************************** */
 
@@ -96,3 +114,24 @@ assert changeValueDeftoKind_not_change_number_of_references{
 }
 check changeValueDeftoKind_not_change_number_of_references for 5
 
+
+assert changeValueDeftoKind_not_change_inheritace_depth{
+	all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
+		changeValueDefToKind[vd, k1, k2, k3, s1, s2]  implies
+			depth_preserved[s1, s2] 
+}
+check changeValueDeftoKind_not_change_inheritace_depth for 5
+
+assert changeValueDeftoKind_not_change_number_of_children{
+	all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
+		 changeValueDefToKind[vd, k1, k2, k3, s1, s2]  implies 
+			children_preserve[s1,s2]
+}
+check changeValueDeftoKind_not_change_number_of_children for 5
+
+assert changeValueDeftoKind_can_increase_cohesion_number{
+	all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
+		 changeValueDefToKind[vd, k1, k2, k3, s1, s2] implies 
+				coupling_preserve[s1, s2]
+}
+check changeValueDeftoKind_can_increase_cohesion_number for 5
