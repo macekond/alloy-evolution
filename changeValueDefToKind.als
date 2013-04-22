@@ -1,23 +1,23 @@
 open model
 
-pred changeValueDefToKind[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	k2 not in s1.kinds 
-	k3 not in s1.kinds 
-	k1 in s1.kinds
+pred changePropertyToClass[vd : Property, disj k1, k2, k3 : Class, disj s1, s2 : State]{
+	k2 not in s1.classes 
+	k3 not in s1.classes 
+	k1 in s1.classes
 	//k1 -> k2
 	// k3 new	
 
-	all k : Kind |
-		k in s1.kinds implies parentsInState[k, s1]
+	all k : Class |
+		k in s1.classes implies parentsInState[k, s1]
 
-	all k : Kind |
-		k in s2.kinds implies parentsInState[k, s2]
+	all k : Class |
+		k in s2.classes implies parentsInState[k, s2]
 
-	s2.kinds = s1.kinds - k1 + k2 + k3
+	s2.classes = s1.classes - k1 + k2 + k3
 	
 	k1.name = k2.name 
-	k2.parent = k1.parent
-	k3.parent = none
+	k2.parentName= k1.parentName
+	k3.parentName= none
 
 	vd in k1.structure.elems
 	
@@ -30,108 +30,108 @@ pred changeValueDefToKind[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : S
 	//k3.structure should have the same structure as vd, but the max cardinality is 1
 	k3.structure.elems = vd
 	
-		#k1.records = #k2.records
-		all r2 : Record |
-			r2 in k2.records implies one r1 : Record | r1.id = r2.id and r1 in k1.records  
+		#k1.instances = #k2.instances
+		all r2 : Instance |
+			r2 in k2.instances implies one r1 : Instance | r1.id = r2.id and r1 in k1.instances  
 				and let idx = k1.structure.idxOf[vd], last = k1.structure.lastIdx  {
 						idx = 0 implies r2.items = rest[r1.items] else
 							idx = last implies r2.items = r1.items.subseq[0, add[idx,1]] else
 								r2.items = r1.items.subseq[0, add[idx,-1]].append[r1.items.subseq[add[idx,1],  last]]
 				}
 
-	#k1.records = #k3.records
+	#k1.instances = #k3.instances
 	// this must be updated when cardinalites and references are introduced
-	all r3 : Record |
-		r3 in k3.records implies one r1 : Record | r1.id = r3.id and r1 in k1.records
+	all r3 : Instance |
+		r3 in k3.instances implies one r1 : Instance | r1.id = r3.id and r1 in k1.instances
 			and let idx = k1.structure.idxOf[vd] |
 				r3.items = r1.items.subseq[idx,idx]
 	
 	//maybe add a reference from k3 -> k1, but they have the same ID
 }
-pred parentsInState[k:Kind, s: State]{
-	all k1 : Kind | k1 in k.*parK implies k in s.kinds and k1 in s.kinds
+pred parentsInState[k:Class, s: State]{
+	all k1 : Class | k1 in k.*parent implies k in s.classes and k1 in s.classes
 }
 
 
-pred changeValueDefToKind_no_records[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	#k1.records = 0 and changeValueDefToKind[vd, k1, k2, k3, s1, s2]
+pred changePropertyToClass_no_instances[vd : Property, disj k1, k2, k3 : Class, disj s1, s2 : State]{
+	#k1.instances = 0 and changePropertyToClass[vd, k1, k2, k3, s1, s2]
 }
-run changeValueDefToKind_no_records for 3 but exactly 2 State, 3 Kind
+run changePropertyToClass_no_instances for 3 but exactly 2 State, 3 Class
 
-pred changeValueDefToKind_one_record[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	#k1.records = 1 and changeValueDefToKind[vd, k1, k2, k3, s1, s2]
+pred changePropertyToClass_one_record[vd : Property, disj k1, k2, k3 : Class, disj s1, s2 : State]{
+	#k1.instances = 1 and changePropertyToClass[vd, k1, k2, k3, s1, s2]
 }
-run changeValueDefToKind_one_record for 4 but exactly 2 State, 3 Kind
+run changePropertyToClass_one_record for 4 but exactly 2 State, 3 Class
 
-pred changeValueDefToKind_hierarchy_exists_on_parent[vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State]{
-	k1.parent != none and changeValueDefToKind[vd, k1, k2, k3, s1, s2]
+pred changePropertyToClass_hierarchy_exists_on_parent[vd : Property, disj k1, k2, k3 : Class, disj s1, s2 : State]{
+	k1.parentName!= none and changePropertyToClass[vd, k1, k2, k3, s1, s2]
 }
-run changeValueDefToKind_hierarchy_exists_on_parent for 4 but exactly 2 State
+run changePropertyToClass_hierarchy_exists_on_parent for 4 but exactly 2 State
 
 /* ***************************************************************************************** */
 
-assert changeValueDeftoKind_structure_same_after{
-	all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
-		 changeValueDefToKind[vd, k1, k2, k3, s1, s2] implies 
-			#s1.kinds.structure.elems = #s2.kinds.structure.elems		
+assert changePropertytoClass_structure_same_after{
+	all vd : Property, disj k1, k2, k3 : Class, disj s1, s2 : State |
+		 changePropertyToClass[vd, k1, k2, k3, s1, s2] implies 
+			#s1.classes.structure.elems = #s2.classes.structure.elems		
 }
-check changeValueDeftoKind_structure_same_after for 5
+check changePropertytoClass_structure_same_after for 5
 
-assert changeValueDeftoKind_number_of_valueDefs_same{
-	all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
-		 changeValueDefToKind[vd, k1, k2, k3, s1, s2] implies  
- 			#({vc : ValueDef | vc in s1.kinds.structure.elems}) = #({vc : ValueDef | vc in s2.kinds.structure.elems})
+assert changePropertytoClass_number_of_valueDefs_same{
+	all vd : Property, disj k1, k2, k3 : Class, disj s1, s2 : State |
+		 changePropertyToClass[vd, k1, k2, k3, s1, s2] implies  
+ 			#({vc : Property | vc in s1.classes.structure.elems}) = #({vc : Property | vc in s2.classes.structure.elems})
 }
 
-check changeValueDeftoKind_number_of_valueDefs_same  for 5
+check changePropertytoClass_number_of_valueDefs_same  for 5
 
-assert changeValueDeftoKind_number_of_referenceDefs_same_after{
-		all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
-		 changeValueDefToKind[vd, k1, k2, k3, s1, s2] implies 
-			#({rd : ReferenceDef | rd in s1.kinds.structure.elems}) = #({vc : ReferenceDef | vc in s2.kinds.structure.elems})
+assert changePropertytoClass_number_of_referenceDefs_same_after{
+		all vd : Property, disj k1, k2, k3 : Class, disj s1, s2 : State |
+		 changePropertyToClass[vd, k1, k2, k3, s1, s2] implies 
+			#({rd : Reference | rd in s1.classes.structure.elems}) = #({vc : Reference | vc in s2.classes.structure.elems})
 }
-check changeValueDeftoKind_number_of_referenceDefs_same_after for 5
+check changePropertytoClass_number_of_referenceDefs_same_after for 5
 
 
-assert changeValueDeftoKind_number_of_kinds_is_grater_after{
-	all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
-		 changeValueDefToKind[vd, k1, k2, k3, s1, s2] implies 
-			#({k : Kind | k in s1.kinds}) < #({k : Kind | k in s2.kinds})
+assert changePropertytoClass_number_of_classes_is_grater_after{
+	all vd : Property, disj k1, k2, k3 : Class, disj s1, s2 : State |
+		 changePropertyToClass[vd, k1, k2, k3, s1, s2] implies 
+			#({k : Class | k in s1.classes}) < #({k : Class | k in s2.classes})
 }
-check changeValueDeftoKind_number_of_kinds_is_grater_after for 5
+check changePropertytoClass_number_of_classes_is_grater_after for 5
 
-assert changeValueDeftoKind_not_change_number_of_values{
-	all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
-		 changeValueDefToKind[vd, k1, k2, k3, s1, s2] implies 
-			#({k : ValueContainer | k in s1.kinds.records.items.elems}) = #({k : ValueContainer | k in s2.kinds.records.items.elems})
+assert changePropertytoClass_not_change_number_of_values{
+	all vd : Property, disj k1, k2, k3 : Class, disj s1, s2 : State |
+		 changePropertyToClass[vd, k1, k2, k3, s1, s2] implies 
+			#({k : ValueContainer | k in s1.classes.instances.items.elems}) = #({k : ValueContainer | k in s2.classes.instances.items.elems})
 }
-check changeValueDeftoKind_not_change_number_of_values for 5
+check changePropertytoClass_not_change_number_of_values for 5
 
-assert changeValueDeftoKind_not_change_number_of_references{
-	all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
-		 changeValueDefToKind[vd, k1, k2, k3, s1, s2] implies 
-			#({k : ReferenceContainer | k in s1.kinds.records.items.elems}) = #({k : ReferenceContainer | k in s2.kinds.records.items.elems})
+assert changePropertytoClass_not_change_number_of_references{
+	all vd : Property, disj k1, k2, k3 : Class, disj s1, s2 : State |
+		 changePropertyToClass[vd, k1, k2, k3, s1, s2] implies 
+			#({k : ReferenceContainer | k in s1.classes.instances.items.elems}) = #({k : ReferenceContainer | k in s2.classes.instances.items.elems})
 }
-check changeValueDeftoKind_not_change_number_of_references for 5
+check changePropertytoClass_not_change_number_of_references for 5
 
 
-assert changeValueDeftoKind_not_change_inheritace_depth{
-	all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
-		changeValueDefToKind[vd, k1, k2, k3, s1, s2]  implies
+assert changePropertytoClass_not_change_inheritace_depth{
+	all vd : Property, disj k1, k2, k3 : Class, disj s1, s2 : State |
+		changePropertyToClass[vd, k1, k2, k3, s1, s2]  implies
 			depth_preserved[s1, s2] 
 }
-check changeValueDeftoKind_not_change_inheritace_depth for 5
+check changePropertytoClass_not_change_inheritace_depth for 5
 
-assert changeValueDeftoKind_not_change_number_of_children{
-	all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
-		 changeValueDefToKind[vd, k1, k2, k3, s1, s2]  implies 
+assert changePropertytoClass_not_change_number_of_children{
+	all vd : Property, disj k1, k2, k3 : Class, disj s1, s2 : State |
+		 changePropertyToClass[vd, k1, k2, k3, s1, s2]  implies 
 			children_preserve[s1,s2]
 }
-check changeValueDeftoKind_not_change_number_of_children for 5
+check changePropertytoClass_not_change_number_of_children for 5
 
-assert changeValueDeftoKind_can_increase_cohesion_number{
-	all vd : ValueDef, disj k1, k2, k3 : Kind, disj s1, s2 : State |
-		 changeValueDefToKind[vd, k1, k2, k3, s1, s2] implies 
+assert changePropertytoClass_can_increase_cohesion_number{
+	all vd : Property, disj k1, k2, k3 : Class, disj s1, s2 : State |
+		 changePropertyToClass[vd, k1, k2, k3, s1, s2] implies 
 				coupling_preserve[s1, s2]
 }
-check changeValueDeftoKind_can_increase_cohesion_number for 5
+check changePropertytoClass_can_increase_cohesion_number for 5
